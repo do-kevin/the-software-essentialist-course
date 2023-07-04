@@ -2,14 +2,7 @@ import { AppDataSource } from "src/config/data-source";
 import { User } from "src/entities/User";
 import { Request, Response, NextFunction } from "express";
 import { handleError } from "src/middlewares/error-handler";
-import {
-  createRegExp,
-  oneOrMore,
-  wordChar,
-  letter,
-  digit,
-  exactly,
-} from "magic-regexp";
+import { emailRegex } from "src/utilities/regex";
 
 export class UserController {
   static async getUsers(req: Request, res: Response, next: NextFunction) {
@@ -29,17 +22,6 @@ export class UserController {
   static async createUser(req: Request, res: Response) {
     try {
       const { first_name, last_name, email } = req.body;
-
-      const emailRegex = createRegExp(
-        oneOrMore(wordChar)
-          .and("@")
-          .and(oneOrMore(letter.or(digit)))
-          .and(
-            exactly(".")
-              .and(oneOrMore(letter.or(digit)))
-              .times.atLeast(1)
-          )
-      );
 
       const emailMatch = emailRegex.test(email);
 
@@ -67,6 +49,12 @@ export class UserController {
     try {
       const { first_name, last_name, email } = req.body;
       const { userId } = req.params;
+
+      const emailMatch = emailRegex.test(email);
+
+      if (!emailMatch) {
+        return res.status(404).send("This email is invalid.");
+      }
 
       const userRepository = await AppDataSource.getRepository(User);
 
